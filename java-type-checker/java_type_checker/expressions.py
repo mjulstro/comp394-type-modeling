@@ -31,6 +31,19 @@ class Variable(Expression):
         self.name = name                    #: The name of the variable
         self.declared_type = declared_type  #: The declared type of the variable (Type)
 
+    def static_type(self):
+        """
+        Returns the compile-time type of this expression, i.e. the most specific type that describes
+        all the possible values it could take on at runtime. Subclasses must implement this method.
+        """
+        return self.declared_type
+
+    def check_types(self):
+        if type(self.name) != self.declared_type:  # This just compares to the 'string' type :/
+            raise TypeError(
+                "Wrong type of argument for variable creation: expected {}, got {}".format(type(self.name), self.declared_type)
+            )
+
 
 class Literal(Expression):
     """ A literal value entered in the code, e.g. `5` in the expression `x + 5`.
@@ -39,10 +52,24 @@ class Literal(Expression):
         self.value = value  #: The literal value, as a string
         self.type = type    #: The type of the literal (Type)
 
+    def static_type(self):
+        """
+        Returns the compile-time type of this expression, i.e. the most specific type that describes
+        all the possible values it could take on at runtime. Subclasses must implement this method.
+        """
+        return self.type
+
 
 class NullLiteral(Literal):
     def __init__(self):
         super().__init__("null", Type.null)
+
+    def static_type(self):
+        """
+        Returns the compile-time type of this expression, i.e. the most specific type that describes
+        all the possible values it could take on at runtime. Subclasses must implement this method.
+        """
+        return Type.null
 
 
 class MethodCall(Expression):
@@ -55,6 +82,13 @@ class MethodCall(Expression):
         self.method_name = method_name  #: The name of the method to call (String)
         self.args = args                #: The method arguments (list of Expressions)
 
+    def static_type(self):
+        """
+        Returns the compile-time type of this expression, i.e. the most specific type that describes
+        all the possible values it could take on at runtime. Subclasses must implement this method.
+        """
+        return hasattr(self.receiver, self.method_name)
+
 
 class ConstructorCall(Expression):
     """
@@ -63,6 +97,13 @@ class ConstructorCall(Expression):
     def __init__(self, instantiated_type, *args):
         self.instantiated_type = instantiated_type  #: The type to instantiate (Type)
         self.args = args                            #: Constructor arguments (list of Expressions)
+
+    def static_type(self):
+        """
+        Returns the compile-time type of this expression, i.e. the most specific type that describes
+        all the possible values it could take on at runtime. Subclasses must implement this method.
+        """
+        return self.instantiated_type
 
 
 class JavaTypeError(Exception):
