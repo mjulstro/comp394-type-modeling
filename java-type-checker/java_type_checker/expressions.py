@@ -87,7 +87,7 @@ class MethodCall(Expression):
         Returns the compile-time type of this expression, i.e. the most specific type that describes
         all the possible values it could take on at runtime. Subclasses must implement this method.
         """
-        return hasattr(self.receiver, self.method_name)
+        return self.receiver.static_type().method_named(self.method_name).return_type
 
 
 class ConstructorCall(Expression):
