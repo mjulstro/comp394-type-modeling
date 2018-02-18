@@ -33,13 +33,12 @@ class Variable(Expression):
 
     def static_type(self):
         """
-        Returns the compile-time type of this expression, i.e. the most specific type that describes
-        all the possible values it could take on at runtime. Subclasses must implement this method.
+        Returns the compile-time type of this expression.
         """
         return self.declared_type
 
     def check_types(self):
-        if type(self.name) != self.declared_type:  # This just compares to the 'string' type :/
+        if self.declared_type != self.declared_type:
             raise TypeError(
                 "Wrong type of argument for variable creation: expected {}, got {}".format(type(self.name), self.declared_type)
             )
@@ -77,7 +76,6 @@ class MethodCall(Expression):
     A Java method invocation, i.e. `foo.bar(0, 1, 2)`.
     """
     def __init__(self, receiver, method_name, *args):
-        self.receiver = receiver
         self.receiver = receiver        #: The object whose method we are calling (Expression)
         self.method_name = method_name  #: The name of the method to call (String)
         self.args = args                #: The method arguments (list of Expressions)
@@ -89,6 +87,28 @@ class MethodCall(Expression):
         """
         return self.receiver.static_type().method_named(self.method_name).return_type
 
+    def check_types(self):
+        """
+        Raises an error if the types don't check out. Doesn't return anything.
+        """
+
+        expected_types = self.receiver.static_type().method_named(self.method_name).argument_types
+        actual_types = self.args
+        call_name = self.receiver.declared_type.name + "." + self.method_name + names(expected_types)
+
+        if len(actual_types) != len(expected_types):
+            raise JavaTypeError(
+                "Wrong number of arguments for {0}: expected {1}, got {2}".format(
+                    call_name,
+                    len(expected_types),
+                    len(actual_types)))
+
+        if names(expected_types) != names(actual_types):
+            raise JavaTypeError(
+                "{0} expects arguments of type {1}, but got {2}".format(
+                    call_name,
+                    names(expected_types),
+                    names(actual_types)))
 
 class ConstructorCall(Expression):
     """
