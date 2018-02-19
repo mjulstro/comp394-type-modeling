@@ -93,8 +93,10 @@ class MethodCall(Expression):
         """
 
         expected_types = self.receiver.static_type().method_named(self.method_name).argument_types
-        actual_types = self.args
         call_name = self.receiver.declared_type.name + "." + self.method_name + names(expected_types)
+        actual_types = []
+        for item in self.args:
+            actual_types.append(item.static_type())
 
         if len(actual_types) != len(expected_types):
             raise JavaTypeError(
@@ -103,12 +105,18 @@ class MethodCall(Expression):
                     len(expected_types),
                     len(actual_types)))
 
-        if names(expected_types) != names(actual_types):
-            raise JavaTypeError(
-                "{0} expects arguments of type {1}, but got {2}".format(
-                    call_name,
-                    names(expected_types),
-                    names(actual_types)))
+        if expected_types != actual_types:
+
+            for i in range(0, len(expected_types)):
+                if expected_types[i] in actual_types[i].direct_supertypes:
+                    actual_types[i] = expected_types[i]
+
+            if expected_types != actual_types:
+                raise JavaTypeError(
+                    "{0} expects arguments of type {1}, but got {2}".format(
+                        call_name,
+                        names(expected_types),
+                        names(actual_types)))
 
 class ConstructorCall(Expression):
     """
